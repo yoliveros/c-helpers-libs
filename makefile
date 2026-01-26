@@ -13,7 +13,7 @@ else
 	C_FLAGS += $(PROD)
 endif
 
-NAME = Minecraft
+NAME = window_manager
 
 SRC_DIR = src
 BUILD_DIR = build
@@ -23,6 +23,12 @@ SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
 ARGS = $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+
+ifeq($(OS), Windows_NT)
+	CLEAN_CMD = rd /s /q $(BUILD_DIR)
+else
+	CLEAN_CMD = rm -rf $(BUILD_DIR)
+endif
 
 .PHONY: all clean run prod dev
 
@@ -50,4 +56,4 @@ run: $(TARGET)
 	./$(TARGET) $(ARGS)
 
 clean:
-	rm -rf $(BUILD_DIR)
+	$(CLEAN_CMD)

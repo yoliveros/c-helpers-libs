@@ -1,5 +1,6 @@
 #pragma once
 
+#include "arena.h"
 #include "base.h"
 
 typedef struct {
@@ -7,6 +8,7 @@ typedef struct {
 } platform_state;
 
 b8 platform_startup(
+    mem_arena *arena,
     platform_state *plat_state,
     const char *app_name,
     i32 x,
