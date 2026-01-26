@@ -4,4 +4,4 @@
 - make
 - Bear
 
-run bear -- make run
+run bear -- make
