@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <threads.h>
 
 mem_arena *arena_create(u64 reserve_size, u64 commit_size) {
   u32 pagesize = get_pagesize();
@@ -28,12 +30,12 @@ void arena_destroy(mem_arena *arena) {
   mem_release(arena, arena->reserve_size);
 }
 
-void *arena_push(mem_arena *arena, u64 size) {
+void *arena_push(mem_arena *arena, u64 size, b32 zero) {
   u64 pos_aligned = ALIGN_UP_POW2(arena->pos, ARENA_ALIGN);
   u64 new_pos = pos_aligned + size;
 
   if (new_pos > arena->reserve_size) {
-    fprintf(stderr, "Failed to allocate memory");
+    perror("Failed to allocate memory");
     exit(1);
   }
 
@@ -56,6 +58,11 @@ void *arena_push(mem_arena *arena, u64 size) {
   arena->pos = new_pos;
 
   u8 *out = (u8 *)arena + pos_aligned;
+
+  if (zero) {
+    memset(out, 0, size);
+  }
+
   return out;
 }
 
@@ -70,6 +77,53 @@ void arena_pop_to(mem_arena *arena, u64 pos) {
 }
 
 void arena_clear(mem_arena *arena) { arena_pop_to(arena, ARENA_BASE_POS); }
+
+mem_arena_temp arena_temp_begin(mem_arena *arena) {
+  return (mem_arena_temp){
+      .arena = arena,
+      .start_pos = arena->pos,
+  };
+}
+
+void arena_temp_end(mem_arena_temp temp) {
+  arena_pop_to(temp.arena, temp.start_pos);
+}
+
+thread_local static mem_arena *_scratch_arena[] = {NULL, NULL};
+
+mem_arena_temp arena_scratch_get(mem_arena **conflicts, u32 num_conflicts) {
+  i32 scratch_index = -1;
+
+  for (i32 i = 0; i < 2; i++) {
+    b32 conflict_found = FALSE;
+
+    for (u32 j = 0; j < num_conflicts; j++) {
+      if (_scratch_arena[i] == conflicts[j]) {
+        conflict_found = TRUE;
+        break;
+      }
+    }
+
+    if (!conflict_found) {
+      scratch_index = i;
+      break;
+    }
+  }
+
+  if (scratch_index == -1) {
+    return (mem_arena_temp){0};
+  }
+
+  mem_arena **selected = &_scratch_arena[scratch_index];
+
+  if (*selected == NULL) {
+    *selected = arena_create(MiB(64), MiB(1));
+  }
+
+  return arena_temp_begin(*selected);
+}
+
+void arena_scratch_release(mem_arena_temp scratch);
 
 #if P_LINUX
 
