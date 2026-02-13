@@ -1,6 +1,5 @@
 #pragma once
 
-#include <math.h>
 #include <stdint.h>
 
 // Signed int types
@@ -20,11 +19,17 @@ typedef i8 b8;
 typedef i32 b32;
 
 // Floating point types
-typedef float_t f32;
-typedef double_t f64;
+typedef float f32;
+typedef double f64;
 
 static const u8 TRUE = 1;
 static const u8 FALSE = 0;
+
+// String
+typedef struct {
+  u8 *str;
+  u64 len;
+} string;
 
 // Platform declaration
 #if defined(_WIN32)
@@ -32,6 +37,12 @@ static const u8 FALSE = 0;
 #elif defined(__linux__)
 #define P_LINUX 1
 #endif
+
+#define STR_FMT(str) (int)(str).len, (str).str
+
+static inline string STR_LIT(u8 *str) {
+  return (string){.str = str, .len = sizeof(str) - 1};
+}
 
 static inline u64 KiB(u64 n) { return n << 10; }
 static inline u64 MiB(u64 n) { return n << 20; }
