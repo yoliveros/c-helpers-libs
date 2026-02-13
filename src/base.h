@@ -29,7 +29,12 @@ static const u8 FALSE = 0;
 typedef struct {
   u8 *str;
   u64 len;
-} string;
+} s8;
+
+typedef struct {
+  u32 *str;
+  u64 len;
+} s32;
 
 // Platform declaration
 #if defined(_WIN32)
@@ -38,10 +43,10 @@ typedef struct {
 #define P_LINUX 1
 #endif
 
-#define STR_FMT(str) (int)(str).len, (str).str
+#define S8_FMT(str) (int)(str).len, (str).str
 
-static inline string STR_LIT(u8 *str) {
-  return (string){.str = str, .len = sizeof(str) - 1};
+static inline s8 S8_LIT(u8 *str) {
+  return (s8){.str = str, .len = sizeof(str) - 1};
 }
 
 static inline u64 KiB(u64 n) { return n << 10; }
